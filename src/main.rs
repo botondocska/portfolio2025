@@ -6,7 +6,7 @@ use actix_web::{
     middleware::Logger,
     web::{self, JsonConfig},
 };
-use sqlx::sqlite::SqlitePoolOptions;
+use sqlx::sqlite::{SqlitePoolOptions, SqliteConnectOptions};
 //use tracing::{info, error};
 
 use crate::handlers::auth::{
@@ -14,6 +14,8 @@ use crate::handlers::auth::{
 };
 use crate::session::DatabaseSession;
 use crate::startup::startup;
+use std::str::FromStr;
+
 
 mod handlers;
 mod session;
@@ -32,10 +34,14 @@ async fn main() -> std::io::Result<()> {
     let database_url =
         std::env::var("DATABASE_URL").unwrap_or_else(|_| "sqlite:portfolio.db".to_string());
 
+    let connect_options = SqliteConnectOptions::from_str(&database_url)
+        .expect("Failed to parse database URL")
+        .create_if_missing(true);
+
     // Create database connection pool
     let pool = SqlitePoolOptions::new()
         .max_connections(5)
-        .connect(&database_url)
+        .connect_with(connect_options)
         .await
         .expect("Failed to connect to database");
 
