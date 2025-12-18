@@ -1,0 +1,162 @@
+{% extends "base.html" %}
+
+{% block title %}Sign In{% endblock %}
+
+{% block content %}
+<div class="card">
+    <div class="logo">
+        <h1>Welcome Bato my portfolio!</h1>
+        <p class="subtitle">Sign in with your passkey</p>
+    </div>
+    
+    <form id="auth-form">
+        <div class="form-group">
+            <label for="email">Email Address</label>
+            <input 
+                type="email" 
+                id="email" 
+                name="email" 
+                placeholder="you@example.com"
+                required
+                autocomplete="email webauthn"
+            >
+        </div>
+        
+        <div id="status-message" style="display: none; padding: 12px; margin-bottom: 16px; border-radius: 8px; text-align: center; font-size: 14px;"></div>
+        
+        <div class="button-group">
+            <button type="button" class="btn" id="sign-in-btn">
+                Sign in with Passkey
+            </button>
+            
+            <div class="divider">
+                <span>OR</span>
+            </div>
+            
+            <button type="button" class="btn" id="register-btn">
+                Register New Passkey
+            </button>
+        </div>
+    </form>
+    
+    <p class="info-text">
+        Passkeys provide secure, passwordless authentication using your device's biometrics or PIN.
+        <a href="https://webauthn.guide" target="_blank">Learn more</a>
+    </p>
+</div>
+{% endblock %}
+
+{% block extra_scripts %}
+<script src="/static/js/webauthn-client.js"></script>
+<script>
+    // Check if WebAuthn is supported
+    if (!WebAuthnClient.isSupported()) {
+        alert('WebAuthn is not supported in this browser. Please use a modern browser like Chrome, Firefox, Safari, or Edge.');
+    }
+
+    // Initialize the WebAuthn client
+    const client = new WebAuthnClient();
+    
+    // Get DOM elements
+    const emailInput = document.getElementById('email');
+    const signInBtn = document.getElementById('sign-in-btn');
+    const registerBtn = document.getElementById('register-btn');
+    const statusMessage = document.getElementById('status-message');
+    
+    // Helper functions for status messages
+    function showStatus(message, isError = false) {
+        statusMessage.textContent = message;
+        statusMessage.style.display = 'block';
+        statusMessage.style.backgroundColor = isError ? 'rgba(255, 255, 255, 0.15)' : 'rgba(255, 255, 255, 0.15)';
+        statusMessage.style.color = isError ? '#ffcccc' : '#ccffcc';
+        statusMessage.style.border = isError ? '1px solid rgba(255, 100, 100, 0.3)' : '1px solid rgba(100, 255, 100, 0.3)';
+    }
+    
+    function hideStatus() {
+        statusMessage.style.display = 'none';
+    }
+    
+    function disableButtons() {
+        signInBtn.disabled = true;
+        registerBtn.disabled = true;
+    }
+    
+    function enableButtons() {
+        signInBtn.disabled = false;
+        registerBtn.disabled = false;
+    }
+    
+    // Register new passkey
+    registerBtn.addEventListener('click', async () => {
+        const email = emailInput.value.trim();
+        
+        if (!email) {
+            showStatus('Please enter an email address', true);
+            return;
+        }
+        
+        // Basic email validation
+        if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+            showStatus('Please enter a valid email address', true);
+            return;
+        }
+        
+        hideStatus();
+        disableButtons();
+        showStatus('Creating passkey... Please follow your browser prompts.');
+        
+        const result = await client.register(email);
+        
+        enableButtons();
+        
+        if (result.success) {
+            showStatus('✅ Passkey registered successfully! You can now sign in.');
+            emailInput.value = '';
+        } else {
+            showStatus('❌ Registration failed: ' + result.message, true);
+        }
+    }); 
+    
+    // Sign in with passkey
+    signInBtn.addEventListener('click', async () => {
+        const email = emailInput.value.trim();
+        
+        if (!email) {
+            showStatus('Please enter an email address', true);
+            return;
+        }
+        
+        // Basic email validation
+        if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+            showStatus('Please enter a valid email address', true);
+            return;
+        }
+        
+        hideStatus();
+        disableButtons();
+        showStatus('Authenticating... Please follow your browser prompts.');
+        
+        const result = await client.authenticate(email);
+        
+        enableButtons();
+        
+        if (result.success) {
+            showStatus('✅ Authentication successful! Redirecting...');
+            // Redirect to dashboard or home page after successful login
+            setTimeout(() => {
+                window.location.href = '/dashboard'; // TODO: Change this to your post-login page
+            }, 1500);
+        } else {
+            showStatus('❌ Authentication failed: ' + result.message, true);
+        }
+    });
+    
+    // Allow Enter key to trigger sign in
+    emailInput.addEventListener('keypress', (e) => {
+        if (e.key === 'Enter') {
+            e.preventDefault();
+            signInBtn.click();
+        }
+    });
+</script>
+{% endblock %}
