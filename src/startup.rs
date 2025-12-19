@@ -14,17 +14,13 @@ use webauthn_rs::prelude::*;
 
 pub(crate) fn startup() -> Data<Webauthn> {
     // Load from environment variables
-    let rp_id = std::env::var("RP_ID")
-        .expect("RP_ID must be set in .env file");
-    
-    let rp_origin = std::env::var("RP_ORIGIN")
-        .expect("RP_ORIGIN must be set in .env file");
-    
-    let rp_origin = Url::parse(&rp_origin)
-        .expect("RP_ORIGIN must be a valid URL");
-    
-    let builder = WebauthnBuilder::new(&rp_id, &rp_origin)
-        .expect("Invalid Webauthn configuration");
+    let rp_id = std::env::var("RP_ID").expect("RP_ID must be set in .env file");
+
+    let rp_origin = std::env::var("RP_ORIGIN").expect("RP_ORIGIN must be set in .env file");
+
+    let rp_origin = Url::parse(&rp_origin).expect("RP_ORIGIN must be a valid URL");
+
+    let builder = WebauthnBuilder::new(&rp_id, &rp_origin).expect("Invalid Webauthn configuration");
 
     // Now, with the builder you can define other options.
     // Set a "nice" relying party name. Has no security properties and
