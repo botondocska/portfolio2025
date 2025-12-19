@@ -15,7 +15,7 @@ use crate::handlers::auth::{
 use crate::session::DatabaseSession;
 use crate::startup::startup;
 use std::str::FromStr;
-
+use dotenvy::dotenv;
 
 mod handlers;
 mod session;
@@ -23,6 +23,7 @@ mod startup;
 
 #[actix_web::main]
 async fn main() -> std::io::Result<()> {
+    dotenv().ok();
     if std::env::var("RUST_LOG").is_err() {
         unsafe {
             std::env::set_var("RUST_LOG", "INFO");
@@ -30,9 +31,19 @@ async fn main() -> std::io::Result<()> {
     }
     tracing_subscriber::fmt::init();
 
-    // Load DATABASE_URL from environment
-    let database_url =
-        std::env::var("DATABASE_URL").unwrap_or_else(|_| "sqlite:portfolio.db".to_string());
+    let database_url = std::env::var("DATABASE_URL")
+        .expect("DATABASE_URL must be set in .env file");
+
+    let secret_key = std::env::var("SECRET_KEY")
+        .expect("SECRET_KEY must be set in .env file");
+
+    let host = std::env::var("HOST")
+        .unwrap_or_else(|_| "127.0.0.1".to_string());
+
+    let port = std::env::var("PORT")
+        .unwrap_or_else(|_| "3443".to_string())
+        .parse::<u16>()
+        .expect("PORT must be a valid number");
 
     let connect_options = SqliteConnectOptions::from_str(&database_url)
         .expect("Failed to parse database URL")
@@ -55,11 +66,8 @@ async fn main() -> std::io::Result<()> {
 
     tracing::info!("Migrations completed successfully");
 
-    // Generate secret key for cookies
-    // IMPORTANT: In production, load this from environment variable or secure config
-    // and keep it consistent across restarts
-    let key = Key::generate();
-
+    // Create session key
+    let secret_key_bytes = Key::from(secret_key.as_bytes());
     // Initialize webauthn
     let webauthn = startup();
 
@@ -71,7 +79,7 @@ async fn main() -> std::io::Result<()> {
             // Middleware
             .wrap(Logger::default())
             .wrap(
-                SessionMiddleware::builder(DatabaseSession::new(pool_clone.clone()), key.clone())
+                SessionMiddleware::builder(DatabaseSession::new(pool_clone.clone()), secret_key_bytes.clone())
                     .cookie_name("webauthnrs".to_string())
                     .cookie_same_site(SameSite::Strict)
                     .cookie_http_only(true)
@@ -95,7 +103,7 @@ async fn main() -> std::io::Result<()> {
             )
             .route("/login_finish", web::post().to(finish_authentication))
     })
-    .bind(("127.0.0.1", 3443))?
+    .bind((host.as_str(), port))?
     .run()
     .await
 }

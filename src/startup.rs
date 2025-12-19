@@ -13,12 +13,18 @@ use actix_web::web::Data;
 use webauthn_rs::prelude::*;
 
 pub(crate) fn startup() -> Data<Webauthn> {
-    // Effective domain name.
-    let rp_id = "localhost";
-    // Url containing the effective domain name
-    // MUST include the port number!
-    let rp_origin = Url::parse("http://localhost:3443").expect("Invalid URL");
-    let builder = WebauthnBuilder::new(rp_id, &rp_origin).expect("Invalid configuration");
+    // Load from environment variables
+    let rp_id = std::env::var("RP_ID")
+        .expect("RP_ID must be set in .env file");
+    
+    let rp_origin = std::env::var("RP_ORIGIN")
+        .expect("RP_ORIGIN must be set in .env file");
+    
+    let rp_origin = Url::parse(&rp_origin)
+        .expect("RP_ORIGIN must be a valid URL");
+    
+    let builder = WebauthnBuilder::new(&rp_id, &rp_origin)
+        .expect("Invalid Webauthn configuration");
 
     // Now, with the builder you can define other options.
     // Set a "nice" relying party name. Has no security properties and
@@ -27,5 +33,5 @@ pub(crate) fn startup() -> Data<Webauthn> {
 
     // Consume the builder and create our webauthn instance.
     // Webauthn has no mutable inner state, so Arc (Data) and read only is sufficient.
-    Data::new(builder.build().expect("Invalid configuration"))
+    Data::new(builder.build().expect("Failed to build Webauthn instance"))
 }
