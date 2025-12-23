@@ -1,0 +1,35 @@
+version: '3.8'
+
+services:
+  app:
+    image: portfolio2
+    env_file:
+      - .env
+    volumes:
+      - portfolio-data:/data
+    restart: unless-stopped
+    networks:
+      - internal
+
+  caddy:
+    image: caddy:alpine
+    ports:
+      - "443:443"
+      - "80:80"
+    volumes:
+      - ./Caddyfile:/etc/caddy/Caddyfile:ro
+      - caddy-data:/data
+      - caddy-config:/config
+    depends_on:
+      - app
+    restart: unless-stopped
+    networks:
+      - internal
+
+volumes:
+  portfolio-data:
+  caddy-data:
+  caddy-config:
+
+networks:
+  internal:

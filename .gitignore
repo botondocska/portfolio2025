@@ -14,12 +14,9 @@ Cargo.lock
 *.db-wal
 portfolio.db
 
-/certs/
-*.pem
-*.key
 *.crt
 
 mytree.ps1
 build.ps1
 
-.shuttle/
+.sqlx/

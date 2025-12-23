@@ -1,0 +1,37 @@
+# Build artifacts
+target/
+
+# Version control
+.git/
+.gitignore
+
+# Deployment artifacts
+deploy/
+
+# Environment and configs
+.env
+.env.*
+
+# Database files
+*.db
+*.db-shm
+*.db-wal
+
+# Docker files (not needed inside container)
+.dockerignore
+docker-compose.yml
+Dockerfile
+
+# Documentation and scripts
+TODO.md
+README.md
+*.ps1
+
+# Certificates
+caddy-root.crt
+
+# Caddy config (mounted as volume)
+Caddyfile
+
+# SQLx offline mode cache (already compiled)
+.sqlx/
