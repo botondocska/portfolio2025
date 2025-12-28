@@ -5,6 +5,10 @@ services:
     image: portfolio2
     env_file:
       - .env
+    environment:
+      # Override for Docker environment
+      - DATABASE_URL=sqlite:///data/portfolio.db
+      - RP_ORIGIN=https://localhost
     volumes:
       - portfolio-data:/data
     restart: unless-stopped
